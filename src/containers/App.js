@@ -1,45 +1,49 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import SearchBox from '../components/SearchBox';
 import Scroll from '../components/Scroll';
 import CardList from '../components/CardList';
 import ErrorBoundary from '../components/ErrorBoundary';
 import './App.css';
 
+import { setSearchField, requestRobots } from '../actions';
+
+const mapStateToProps = state => {
+    return {
+        searchField: state.searchRobots.searchField,
+        robots: state.requestRobots.robots,
+        isPending: state.requestRobots.isPending,
+        error: state.requestRobots.error
+    }
+}
+
+const mapDispatchToProps = (dispatch) => {
+    return {
+        onSearchChange: (event) => dispatch(setSearchField(event.target.value)),
+        onRequestRobots: () => dispatch(requestRobots())
+    }
+}
 
 class App extends Component {
-    constructor() {
-        super();
-        this.state = {
-            robots: [],
-            searchField: ''
-        }
-    }
-
     componentDidMount() {
-        fetch('https://jsonplaceholder.typicode.com/users')
-            .then(resp => resp.json() )
-            .then(users => this.setState( {robots: users } ))
-            .catch(e => console.log('error: ', e) )
-    }
-
-    onSearchChange = (event) => {
-        this.setState({ searchField: event.target.value });
+        this.props.onRequestRobots();
     }
 
     render() {
         //destructure so do not need to use 'this.state' syntax everytime
-        const { robots, searchField } = this.state;
+        const { searchField, onSearchChange, robots, isPending } = this.props;
 
         const filteredRobots = robots.filter(robot => {
             return robot.name.toLowerCase().includes(searchField.toLowerCase());
         });
-        if (!robots.length){
+        
+        if (isPending){
             return <h1 className='tc f1'>Loading...</h1>
         } else {
             return (
                 <div className='tc'>
                     <h1 className='f1'>RoboFriends</h1>
-                    <SearchBox searchChange={this.onSearchChange} />
+                    <SearchBox searchChange={onSearchChange} />
                     <Scroll>
                         <ErrorBoundary>
                             <CardList robots={filteredRobots}/>
@@ -52,5 +56,5 @@ class App extends Component {
     }
 }
 
-
-export default App;
+//connect() is a Higher Order Functions, function which returns function
+export default connect(mapStateToProps, mapDispatchToProps)(App);
